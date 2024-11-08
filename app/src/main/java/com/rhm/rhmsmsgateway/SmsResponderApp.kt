@@ -78,7 +78,7 @@ fun RequestSmsPermissions(onPermissionsGranted: () -> Unit) {
     val receiveSmsPermissionState = rememberPermissionState(android.Manifest.permission.RECEIVE_SMS)
     val sendSmsPermissionState = rememberPermissionState(android.Manifest.permission.SEND_SMS)
     val readPhoneStatePermissionState = rememberPermissionState(android.Manifest.permission.READ_PHONE_STATE)
-    val readPhoneNumbersPermissionState = rememberPermissionState(android.Manifest.permission.READ_PHONE_NUMBERS)
+    // val readPhoneNumbersPermissionState = rememberPermissionState(android.Manifest.permission.READ_PHONE_NUMBERS)
     LaunchedEffect(Unit) {
         if (!receiveSmsPermissionState.status.isGranted) {
             receiveSmsPermissionState.launchPermissionRequest()
@@ -89,13 +89,13 @@ fun RequestSmsPermissions(onPermissionsGranted: () -> Unit) {
         if (!readPhoneStatePermissionState.status.isGranted){
             readPhoneStatePermissionState.launchPermissionRequest()
         }
-        if (!readPhoneNumbersPermissionState.status.isGranted){
-            readPhoneNumbersPermissionState.launchPermissionRequest()
-        }
+//        if (!readPhoneNumbersPermissionState.status.isGranted){
+//            readPhoneNumbersPermissionState.launchPermissionRequest()
+//        }
     }
 
     if (receiveSmsPermissionState.status.isGranted && sendSmsPermissionState.status.isGranted
-        && readPhoneStatePermissionState.status.isGranted && readPhoneNumbersPermissionState.status.isGranted
+        && readPhoneStatePermissionState.status.isGranted // && readPhoneNumbersPermissionState.status.isGranted
         ) {
         onPermissionsGranted()
     } else {
