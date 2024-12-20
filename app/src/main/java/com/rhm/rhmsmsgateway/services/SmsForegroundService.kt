@@ -54,8 +54,8 @@ class SmsForegroundService : Service() {
             // Pass the token as a query parameter
             val options = IO.Options()
             options.query = "token=$token&deviceId=$mId" // Attach the token
-            // socket = IO.socket("ws://coral-app-cazak.ondigitalocean.app", options) // Replace with your server URL
-            socket = IO.socket("http://10.0.2.2:3000", options) // Replace with your server URL
+            socket = IO.socket("ws://coral-app-cazak.ondigitalocean.app", options) // Replace with your server URL
+            // socket = IO.socket("http://10.0.2.2:3000", options) // Replace with your server URL
             socket.connect()
             val mainChannel = "sendSMS"
             socket.on(mainChannel) { args ->
