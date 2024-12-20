@@ -21,6 +21,7 @@ import io.socket.client.Socket
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URISyntaxException
+import android.provider.Settings
 
 class SmsForegroundService : Service() {
 
@@ -48,18 +49,21 @@ class SmsForegroundService : Service() {
         // Initialize Socket.IO connection
         try {
             val sharedPreferences = application.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-            socket = IO.socket("ws://165.22.179.230:4000") // Replace with your server URL
-            // socket = IO.socket("ws://10.0.2.2:4000") // Replace with your server URL
+            val token = sharedPreferences.getString("token", "")
+            val mId = Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
+            // Pass the token as a query parameter
+            val options = IO.Options()
+            options.query = "token=$token&deviceId=$mId" // Attach the token
+            // socket = IO.socket("ws://coral-app-cazak.ondigitalocean.app", options) // Replace with your server URL
+            socket = IO.socket("http://10.0.2.2:3000", options) // Replace with your server URL
             socket.connect()
-            val mainChannel = sharedPreferences.getString("userId","_")
+            val mainChannel = "sendSMS"
             socket.on(mainChannel) { args ->
                 if (args.isNotEmpty()) {
                     try {
                         val data = args[0] as JSONObject
                         Log.d("SmsForegroundService", "Received message: $data")
-                        if (data.getString("origin").toString().equals("CRM")) {
-                            handleSocketIncomingMessage(data)
-                        }
+                        handleSocketIncomingMessage(data)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -70,13 +74,14 @@ class SmsForegroundService : Service() {
                 if (args.isNotEmpty()) {
                     try {
                         val data = args[0] as JSONArray
-                        Log.d("SmsForegroundService", "Received pending messages: $data")
+                        Log.d("SmsForegroundService", "Received ${data.length()} pending messages: $data")
                         for (i in 0 until data.length()) {
                             val message = data.getJSONObject(i)
+                            Log.d("SmsForegroundService", "Pending message: $message")
                             sendSmsResponse(
                                 message.getString("receiver"),
                                 message.getString("content"),
-                                message.getString("messageId")
+                                message.getString("_id")
                             )
                         }
                     } catch (e: Exception) {
@@ -145,7 +150,7 @@ class SmsForegroundService : Service() {
     }
 
     private fun handleSocketIncomingMessage(data: JSONObject) {
-        val sender = data.getString("sender")
+        // val sender = data.getString("sender")
         val receiver = data.getString("receiver")
         val content = data.getString("content")
         val messageId = data.getString("messageId")
@@ -157,15 +162,18 @@ class SmsForegroundService : Service() {
     private fun sendSmsResponse(phoneNumber: String, message: String, messageId: String) {
         val smsManager = android.telephony.SmsManager.getDefault()
 
+        val sentRequestCode = messageId.hashCode() // Unique request code based on messageId
+        val deliveredRequestCode = sentRequestCode + 1
+
         // Create PendingIntent for sent and delivered actions
         val sentIntent = PendingIntent.getBroadcast(
-            this, 0, Intent(SMS_SENT_ACTION).apply {
+            this, sentRequestCode, Intent(SMS_SENT_ACTION).apply {
                 putExtra("messageId", messageId)
             },
             PendingIntent.FLAG_IMMUTABLE
         )
         val deliveredIntent = PendingIntent.getBroadcast(
-            this, 0, Intent(SMS_DELIVERED_ACTION).apply {
+            this, deliveredRequestCode, Intent(SMS_DELIVERED_ACTION).apply {
                 putExtra("messageId", messageId)
             },
             PendingIntent.FLAG_IMMUTABLE
@@ -184,7 +192,7 @@ class SmsForegroundService : Service() {
             "deviceId" to deviceId,
             "origin" to "Android"
         )
-        socket.emit("message", JSONObject(payload))
+        socket.emit("incomingSMS", JSONObject(payload))
         Log.d("SmsForegroundService", "Emitted message: $payload")
     }
 
@@ -196,10 +204,10 @@ class SmsForegroundService : Service() {
                     Log.d("SmsForegroundService", "SMS sent successfully")
                     intent.getStringExtra("messageId")?.let {
                         val payload = mapOf(
-                            "status" to "sent",
+                            "status" to "SENT",
                             "messageId" to it
                         )
-                        socket.emit("messageStatus", JSONObject(payload))
+                        socket.emit("deliveryStatus", JSONObject(payload))
                         Log.d("SmsForegroundService", "Emitted message status: $payload")
 
                         socket.emit("messageSent")
@@ -237,10 +245,10 @@ class SmsForegroundService : Service() {
                     Log.d("SmsForegroundService", "SMS delivered successfully")
                     intent.getStringExtra("messageId")?.let {
                         val payload = mapOf(
-                            "status" to "sent",
+                            "status" to "DELIVERED",
                             "messageId" to it
                         )
-                        socket.emit("messageStatus", JSONObject(payload))
+                        socket.emit("deliveryStatus", JSONObject(payload))
                         Log.d("SmsForegroundService", "Emitted message status: $payload")
 
                         socket.emit("messageSent")

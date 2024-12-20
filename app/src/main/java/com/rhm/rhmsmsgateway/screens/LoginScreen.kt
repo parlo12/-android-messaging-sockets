@@ -14,6 +14,7 @@ import com.rhm.rhmsmsgateway.viewModels.UserViewModel
 
 @Composable
 fun LoginScreen(viewModel: UserViewModel, onLoginSuccess: () -> Unit) {
+    var crmApiKey by remember { mutableStateOf("211ebca00d45b10e9a431387d8595869") }
     var email by remember { mutableStateOf("hello2@buganzi.com") }
     var password by remember { mutableStateOf("password123") }
     var loginStatus by remember { mutableStateOf<String?>(null) }
@@ -31,27 +32,35 @@ fun LoginScreen(viewModel: UserViewModel, onLoginSuccess: () -> Unit) {
             CircularProgressIndicator()
         } else {
             TextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
+                value = crmApiKey,
+                onValueChange = { crmApiKey = it },
+                label = { Text("CRM API Key") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            TextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth()
-            )
+//            TextField(
+//                value = email,
+//                onValueChange = { email = it },
+//                label = { Text("Email") },
+//                modifier = Modifier.fillMaxWidth()
+//            )
+//            Spacer(modifier = Modifier.height(16.dp))
+//            TextField(
+//                value = password,
+//                onValueChange = { password = it },
+//                label = { Text("Password") },
+//                modifier = Modifier.fillMaxWidth()
+//            )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    viewModel.loginUser(email, password) { success, message ->
-                        loginStatus = message
-                        if (success) {
-                            onLoginSuccess()
-                        }
-                    }
+//                    viewModel.loginUser(email, password) { success, message ->
+//                        loginStatus = message
+//                        if (success) {
+//                            onLoginSuccess()
+//                        }
+//                    }
+                    viewModel.storeCrmApiKey(crmApiKey)
+                    onLoginSuccess()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

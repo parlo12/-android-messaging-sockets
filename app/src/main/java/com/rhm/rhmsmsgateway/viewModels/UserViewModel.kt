@@ -31,7 +31,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         userEmail.value = sharedPreferences.getString("user_email", null)
     }
 
-    var deviceId: String = sharedPreferences.getString("deviceId", "").toString()
+    var deviceId: String = Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
 
     fun incrementMessageCount() {
         messageCount.value += 1
@@ -43,6 +43,10 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         sharedPreferences.edit()
             .putString("deviceId", temp)
             .apply();
+    }
+
+    fun storeCrmApiKey(apiKey: String) {
+        sharedPreferences.edit().putString("crmApiKey", apiKey).apply()
     }
 
     fun loginUser(email: String, password: String, onResult: (Boolean, String) -> Unit) {
@@ -75,24 +79,23 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     fun registerDevice(deviceInfo: Map<String, String?>,onResult: (Boolean, String) -> Unit) {
         val request = RegisterDeviceRequest(
-            model = deviceInfo["model"] ?: "",
-            SIM = deviceInfo["SIM"] ?: "",
+//            model = deviceInfo["model"] ?: "",
+//            SIM = deviceInfo["SIM"] ?: "",
+//            subAdminId = sharedPreferences.getString("userId", "").toString(),
             phoneNumber = deviceInfo["phoneNumber"] ?: "",
-            subAdminId = sharedPreferences.getString("userId", "").toString()
+            deviceId = deviceInfo["deviceId"] ?: ""
         )
-        val token = "Bearer ${sharedPreferences.getString("token", "")}"
         Log.d("RegisterDevice", "Request: $request")
-        Log.d("RegisterDevice", token)
         viewModelScope.launch {
             isLoadingRegisterDevice.value = true
             try {
-                val response = RetrofitInstance.api.registerDevice(token,request)
+                val response = RetrofitInstance.api.registerDevice(request)
                 Log.d("RegisterDevice", "Response: $response")
                 if (response.isSuccessful && response.body() != null) {
                     println(response.body())
-                    deviceId = response.body()?.data?._id ?: ""
+                    val token = response.body()?.token ?: ""
                     sharedPreferences.edit()
-                        .putString("deviceId", deviceId)
+                        .putString("token", token)
                         .apply()
 
                     onResult(true, "Device Registered successful")

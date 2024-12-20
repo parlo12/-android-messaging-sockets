@@ -26,15 +26,19 @@ data class UserData(
 )
 
 data class RegisterDeviceRequest(
-    val model: String,
-    val SIM: String,
-    val phoneNumber: String,
-    val subAdminId: String
+//    val model: String,
+//    val SIM: String,
+//    val phoneNumber: String,
+//    val subAdminId: String
+    val deviceId: String,
+    val phoneNumber: String
 )
 
 data class RegisterDeviceResponse(
-    val message: String,
-    val data: DeviceDate,
+//    val message: String,
+//    val data: DeviceDate,
+    val success: String,
+    val token: String,
 )
 
 data class DeviceDate(
@@ -49,6 +53,6 @@ interface ApiService {
     @POST("/users/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
-    @POST("/devices/register")
-    suspend fun registerDevice(@Header("Authorization") token: String, @Body request: RegisterDeviceRequest): Response<RegisterDeviceResponse>
+    @POST("/api/registerDevice")
+    suspend fun registerDevice(@Body request: RegisterDeviceRequest): Response<RegisterDeviceResponse>
 }
